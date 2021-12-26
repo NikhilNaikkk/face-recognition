@@ -1,0 +1,81 @@
+import sys
+import cv2
+import face_recognition
+import speech_recognition as sr
+import pyttsx3
+
+engine = pyttsx3.init()
+rate = engine.getProperty("rate")
+engine.setProperty("rate",120)
+
+listener = sr.Recognizer()
+
+def talk(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def get_info():
+    try:
+        with sr.Microphone() as source:
+            print('listening....')
+            voice = listener.listen(source)
+            info = listener.recognize_google(voice)
+            print(info)
+            return info.lower()
+    except:
+        pass
+
+
+def analyze_user():
+    talk('Hello! My name is pybot ! Do you want to login or Register your self')
+    face = get_info()
+    if 'login' in face:
+        talk("Scanning Face....")
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
+        cv2.imwrite('Picture.jpg', frame)
+        cv2.destroyAllWindows()
+        cap.release()
+        talk("Face scan complete.")
+        baseimg = face_recognition.load_image_file("mypic.jpg")
+        baseimg = cv2.cvtColor(baseimg, cv2.COLOR_BGR2RGB)
+
+        myface = face_recognition.face_locations(baseimg)[0]
+        encodemyface = face_recognition.face_encodings(baseimg)[0]
+        cv2.rectangle(baseimg, (myface[3], myface[0]), (myface[1], myface[2]), (255, 0, 255), 2)
+
+        sampleimg = face_recognition.load_image_file("Picture.jpg")
+        sampleimg = cv2.cvtColor(sampleimg, cv2.COLOR_BGR2RGB)
+
+        try :
+            samplefacetest = face_recognition.face_locations(sampleimg)[0]
+            encodesamplefacetest = face_recognition.face_encodings(sampleimg)[0]
+        except IndentationError as e :
+            talk("Index Error. Authentication Failed")
+            sys.exit()
+
+        result = face_recognition.compare_faces([encodemyface], encodesamplefacetest)
+        resultstring = str(result)
+
+        if resultstring == "[True]" :
+            talk("User authenticated! Welcome back sir")
+        else :
+            talk("Unauthorized user! Sorry I Can't help you")
+
+    elif 'register' in face:
+        talk("Scanning Face....")
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
+        cv2.imwrite('mypic.jpg', frame)
+        cv2.destroyAllWindows()
+        cap.release()
+        talk("Face scan complete.")
+        talk('You are registered successfully!')
+
+    else:
+        talk("Sorry I can't help you with that.")
+
+
+
+
+analyze_user()
